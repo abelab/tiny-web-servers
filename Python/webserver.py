@@ -1,11 +1,10 @@
 # coding: utf-8
-
 #
-# A simple Web server implementation with Python
+# A simple Web server implementation in Python
 # Requires: Python 3.7 or later
 #
 # Usage:
-#   python webserver.py
+#   python3 webserver.py
 #
 # Author: Kota Abe
 #

@@ -1,5 +1,5 @@
 /*
- * A simple Web server implementation with JavaScript on Node.js.
+ * A simple Web server implementation in JavaScript (on Node.js)
  *
  * Usage:
  *   node webserver.js

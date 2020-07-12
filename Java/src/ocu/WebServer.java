@@ -1,5 +1,5 @@
 /*
- * A simple Web server implementation with Java
+ * A simple Web server implementation in Java
  * Author: Kota Abe
  */
 package ocu;

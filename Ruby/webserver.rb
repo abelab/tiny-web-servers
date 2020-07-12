@@ -1,6 +1,6 @@
 # coding: utf-8
 #
-# A simple Web server implementation with Ruby
+# A simple Web server implementation in Ruby
 # Requires: Ruby 2.6 or later
 #
 # Usage:

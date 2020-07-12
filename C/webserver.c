@@ -1,5 +1,5 @@
 /*
- * A simple Web server implementation for demonstrating Socket API with C
+ * A simple Web server implementation in C
  * Author: Kota Abe
  */
 
@@ -176,13 +176,7 @@ int main(int argc, char **argv)
 
     printf("open http://localhost:8000/ with your browser!\n");
 
-    /*
-     * クライアントからのコネクションを待ち受けて処理するループ
-     * （注意）このコードでは，handle_client()が終了するまで（すなわち，クライアントとの通信が終わるまで），
-     * サーバは別のクライアントからのコネクションを処理できない．
-     * 実際のネットワークサーバでは複数のクライアントと同時に通信する必要があるため，マルチスレッドやマルチプロセス，
-     * 非同期通信などの技法を用いる．
-     */
+    // クライアントからのコネクションを処理するためのループ
     while (1) {
         // accept()はクライアントとのコネクションが確立するのを待ってブロックする（待つ）．
         // 確立すると当該コネクションで通信するためのファイル記述子を返す．
