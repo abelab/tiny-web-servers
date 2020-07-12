@@ -86,9 +86,9 @@ def main():
 
     while True:
         client_sock, address = server_sock.accept()
-        print(f"Connection from {address} has been established!")
-        handle_client_socket(client_sock)
-        client_sock.close()
+        with client_sock:
+            print(f"Connection from {address} has been established!")
+            handle_client_socket(client_sock)
 
 
 main()
