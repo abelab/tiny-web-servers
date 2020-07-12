@@ -1,6 +1,6 @@
 # tiny-web-servers
 
-This repository contains implementations of tiny web servers written in C, Java, JavaScript (on Node.js) and Ruby.   All implementations have the same functionality.   
+This repository contains implementations of tiny web servers written in C, Java, Python, JavaScript (on Node.js) and Ruby.   All implementations have the same functionality.
 
 I wrote these to be used for an introduction of network server programming in one of my lectures.
 
