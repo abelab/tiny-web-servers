@@ -40,8 +40,8 @@ Content-Type: text/html
 	conn.Write([]byte(replaced))
 }
 
-// handleClientSocket - クライアントとHTTP/1.0で通信する
-func handleClientSocket(conn net.Conn) {
+// handleClient - クライアントとHTTP/1.0で通信する
+func handleClient(conn net.Conn) {
 	defer conn.Close()                // この関数終了時にクローズするように要求
 	headers := []string{}             // ヘッダを覚えておくためのstringのスライス
 	scanner := bufio.NewScanner(conn) // コネクションからの読み取りを行単位に行うためのもの
@@ -94,6 +94,6 @@ func main() {
 		}
 		fmt.Printf("Connection from %v has been established!\n", conn.RemoteAddr())
 		// 確立したら，goroutineを作って処理させる (goroutineは並行に動作する)
-		go handleClientSocket(conn)
+		go handleClient(conn)
 	}
 }
