@@ -11,42 +11,27 @@
 // このプログラムでは低レベルの処理を見せるために"net"モジュールを使っている
 const net = require("net");
 
-/**
- * GET要求を処理する
- */
-function handleGet(conn, path) {
-    if (path === "/") {
-        // backquote(``)では文字列中の改行は\nになる
-        conn.write(
-            `HTTP/1.0 200 OK\r
-Content-Type: text/html\r
-\r
-<!DOCTYPE html>
-<html>
-<head><title>Sample</title></head>
-<body>This server is implemented with JavaScript!</body>
-</html>
-`);
-    } else {
-        conn.write(
-            `HTTP/1.0 404 Not Found\r
-Content-Type: text/html\r
-\r
-<!DOCTYPE html>
-<html>
-<head><title>404 Not Found</title></head>
-<body>${path} is not found</body>
-</html>
-`);
-    }
+function main() {
+    const server = net.createServer(); // サーバの作成
+    // JavaScriptでは基本的にイベントベースで処理を記述する
+    // - クライアントからのコネクションが確立すると"connection"というイベントが発生する．
+    // - そのときに conn => { handleClient(conn); } というアロー関数が実行されるように設定する．
+    //    connは確立したコネクション(net.Socketのオブジェクト)
+    // https://nodejs.org/api/net.html#net_event_connection
+    server.on("connection", conn => {
+        handleClient(conn);
+    });
+    server.listen(8000); // コネクションの待ち受けを開始する
+    console.log("open http://localhost:8000/ with your browser!");
+    // ここでmain関数は終わるが，裏でコネクションの確立を待っている
 }
 
 /**
  * クライアントとHTTP/1.0で通信する．
  * @param {net.Socket} conn
  */
-function handleClient(conn) {
-    console.log(`connection established: remoteIP=${conn.remoteAddress}, remotePort=${conn.remotePort}`);
+ function handleClient(conn) {
+    console.log(`Connection from ${conn.remoteAddress}:${conn.remotePort} has been established!`)
     let buf = "";  // 読み込んだHTTPヘッダを覚えておくバッファ
     // クライアントからデータが届いた場合の処理を設定する
     // (設定するだけなので，この処理はデータが届く前に終了する)
@@ -60,7 +45,7 @@ function handleClient(conn) {
             const headers = head.split("\r\n"); // 行単位に分割する
             // 先頭行を " " で分割する．分割代入構文を使って配列の要素を3つの変数に代入
             let [ method, path, http_version ] = headers[0].split(" ");
-            console.log(`method = ${method}, path=${path}, http_version=${http_version}`);
+            console.log(`method=${method}, path=${path}, http_version=${http_version}`);
             switch (method) {
                 case "GET":
                     handleGet(conn, path);
@@ -80,19 +65,36 @@ function handleClient(conn) {
     });
 }
 
-function main() {
-    const server = net.createServer(); // サーバの作成
-    // JavaScriptでは基本的にイベントベースで処理を記述する
-    // - クライアントからのコネクションが確立すると"connection"というイベントが発生する．
-    // - そのときに conn => { handleClient(conn); } というアロー関数が実行されるように設定する．
-    //    connは確立したコネクション(net.Socketのオブジェクト)
-    // https://nodejs.org/api/net.html#net_event_connection
-    server.on("connection", conn => {
-        handleClient(conn);
-    });
-    server.listen(8000); // コネクションの待ち受けを開始する
-    console.log("open http://localhost:8000/ with your browser!");
-    // ここでmain関数は終わるが，裏でコネクションの確立を待っている
+/**
+ * GET要求を処理する
+ */
+ function handleGet(conn, path) {
+    var s
+    if (path === "/") {
+        // backquote(``)では文字列中の改行は\nになる
+        s = `HTTP/1.0 200 OK
+Content-Type: text/html
+
+<!DOCTYPE html>
+<html>
+<head><title>Sample</title></head>
+<body>This server is implemented with JavaScript!</body>
+</html>
+`
+    } else {
+        s = `HTTP/1.0 404 Not Found
+Content-Type: text/html
+
+<!DOCTYPE html>
+<html>
+<head><title>404 Not Found</title></head>
+<body>${path} is not found</body>
+</html>
+`
+    }
+  	// 改行を LF (\n) から CR+LF (\r\n) に置き換える
+    replaced = s.replace("\n", "\r\n")
+    conn.write(replaced)
 }
 
 main();

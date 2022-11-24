@@ -16,127 +16,9 @@
 #include <arpa/inet.h> // inet_ntop()
 #include <unistd.h> // close()
 
-/*
- * GET要求を処理する
- */
-void handle_get(FILE *fp, const char *path)
-{
-    if (strcmp(path, "/") == 0) {    // http://localhost:8000/ へのアクセスの場合
-        // C言語では連続した文字列は自動的に連結される
-        fprintf(fp,
-                "HTTP/1.0 200 OK\r\n"         // ステータス行
-                "Content-Type: text/html\r\n" // 本体がHTMLであることを伝える
-                "\r\n"                        // ヘッダの終了を表す空行
-                "<!DOCTYPE html>\r\n"         // 以下はHTML (HTML5)
-                "<html>\r\n"
-                "<head><title>Sample</title></head>\r\n"
-                "<body>This server is implemented with C!</body>\r\n"
-                "</html>\r\n"
-        );
-    } else {    // 他のパス (http://localhost:8000/abc.html) などへのアクセスの場合，404エラー
-        fprintf(fp,
-                "HTTP/1.0 404 Not Found\r\n"  // 404はNot Foundを表す
-                "Content-Type: text/html\r\n"
-                "\r\n"
-                "<!DOCTYPE html>\r\n"
-                "<html>\r\n"
-                "<head><title>404 Not Found</title></head>\r\n"
-                "<body>%s is not found</body>\r\n"
-                "</html>\r\n",
-                path
-        );
-    }
-    fflush(fp); // 溜まっているバッファをフラッシュ(送信)
-}
-
-/*
- * クライアントとHTTP/1.0で通信する
- */
-void handle_client(int client_fd, struct sockaddr_in *client_addr)
-{
-    // inet_ntop()でクライアントのIPアドレスを "1.2.3.4" 形式に変換
-    // - IPアドレスはsockaddr_in構造体のsin_addrメンバに入っている
-    char ipstr[128];
-    if (inet_ntop(AF_INET, &client_addr->sin_addr, ipstr, sizeof ipstr) == NULL) {
-        perror("inet_ntop");
-        exit(1);
-    }
-    printf("connected: %s\n", ipstr);
-
-    // ファイル記述子を直接扱うとバイト列で読み書きすることしかできない
-    // 行単位で読み書きするために，fdopen()を使ってfgetsやfprintfを使えるようにする
-    //   "r+" は読み込みも書き込みもできるようにする指定
-    FILE *fp = fdopen(client_fd, "r+");
-    if (fp == NULL) {
-        perror("fdopen");
-        return;
-    }
-
-    // headersはクライアントが送信するHTTPヘッダを覚えておくための配列．固定長なのはわかりやすさ優先
-    //   そもそも1行目しか使ってないので不要...
-    const int MAX_HEADER_LINES = 256;
-    char *headers[MAX_HEADER_LINES];
-    int header_index = 0;
-    // クライアントからの要求を読み出すループ
-    while (1) {
-        if (header_index >= MAX_HEADER_LINES) {
-            printf("too many HTTP headers!");
-            break;
-        }
-        // 1行読み込み
-        char line[1024];
-        if (fgets(line, sizeof line, fp) == NULL) {
-            printf("connection closed!");
-            break;
-        }
-        // fgetsは改行を削除しないので，行中の最初の\rか\nを\0に書き換えて切り詰める
-        char *eol = strpbrk(line, "\r\n");
-        if (eol) {
-            *eol = '\0';
-        }
-        printf("Received: %s\n", line);
-        // headersに代入．strdup()は文字列をmallocした領域にコピーする関数
-        headers[header_index++] = strdup(line);
-
-        // 空行かどうかの判定
-        if (strcmp(line, "") == 0) {
-            // 最初の行は "GET / HTTP/1.0" のような形式になっている．これを取り出す．
-            char *request_line = headers[0];
-            char *req[] = { NULL, NULL, NULL }; // method, path, versionの3つの要素を入れる配列
-            // strtok()で空白で分割する
-            for (int i = 0; i < 3; i++) {
-                char *word = strtok(request_line, " "); // " " で区切られた最初のトークンを返す
-                request_line = NULL; // strtok()の2回目以降の呼び出しでは第1引数をNULLにする約束
-                req[i] = word;
-                if (word == NULL) {
-                    break;
-                }
-            }
-            // 念のため，3つめの要素があるかを確認
-            if (req[2] == NULL) {
-                printf("wrong format\n");
-                break;
-            }
-            const char *method = req[0];
-            const char *path = req[1];
-            const char *http_version = req[2];
-            printf("method=%s, path=%s, http_version=%s\n", method, path, http_version);
-            // 要求を処理
-            if (strcmp(method, "GET") == 0) {
-                handle_get(fp, path);
-            } else {
-                // GET要求以外の場合，クライアントに 501 Not Implemented エラーを返す
-                printf("unsupported method: %s\n", method);
-                fprintf(fp, "HTTP/1.0 501 Not Implemented\r\n");
-            }
-            break;
-        }
-    }
-    fclose(fp); // fcloseは内部でcloseを呼ぶので，クライアントとのコネクションが切断される
-    for (int i = 0; i < header_index; i++) {
-        free(headers[i]); // strdup()でmallocした領域を開放
-    }
-}
+// プロトタイプ宣言
+void handle_get(FILE *fp, const char *path);
+void handle_client(int client_fd, struct sockaddr_in *client_addr);
 
 int main(int argc, char **argv)
 {
@@ -190,4 +72,128 @@ int main(int argc, char **argv)
         }
         handle_client(client_fd, &client_addr); // クライアントとのやりとりを行う
     }
+}
+
+/*
+ * クライアントとHTTP/1.0で通信する
+ */
+void handle_client(int client_fd, struct sockaddr_in *client_addr)
+{
+    // inet_ntop()でクライアントのIPアドレスを "1.2.3.4" 形式に変換
+    // - IPアドレスはsockaddr_in構造体のsin_addrメンバに入っている
+    char ipstr[128];
+    if (inet_ntop(AF_INET, &client_addr->sin_addr, ipstr, sizeof ipstr) == NULL) {
+        perror("inet_ntop");
+        return;
+    }
+    printf("Connection from %s has been established!\n", ipstr);
+
+    // ファイル記述子を直接扱うとバイト列で読み書きすることしかできない
+    // 行単位で読み書きするために，fdopen()を使ってfgetsやfprintfを使えるようにする
+    //   "r+" は読み込みも書き込みもできるようにする指定
+    FILE *fp = fdopen(client_fd, "r+");
+    if (fp == NULL) {
+        perror("fdopen");
+        return;
+    }
+
+    // headersはクライアントが送信するHTTPヘッダを覚えておくための配列．固定長なのはわかりやすさ優先
+    //   そもそも1行目しか使ってないので不要...
+    const int MAX_HEADER_LINES = 256;
+    char *headers[MAX_HEADER_LINES];
+    int header_index = 0;
+    // HTTPヘッダを読むための繰り返し
+    while (1) {
+        if (header_index >= MAX_HEADER_LINES) {
+            puts("too many HTTP headers!");
+            goto bailout;
+        }
+        // 1行読み込み
+        char line[1024];
+        if (fgets(line, sizeof line, fp) == NULL) {
+            puts("connection closed!");
+            goto bailout;
+        }
+        // fgetsは改行を削除しないので，行中の最初の\rか\nを\0に書き換えて切り詰める
+        char *eol = strpbrk(line, "\r\n");
+        if (eol) {
+            *eol = '\0';
+        }
+        printf("Received: %s\n", line);
+        // headersに代入．strdup()は文字列をmallocした領域にコピーする関数
+        headers[header_index++] = strdup(line);
+
+        // 空行判定
+        if (strcmp(line, "") == 0) {
+            break;
+        }
+    }
+
+    // 最初の行は "GET / HTTP/1.0" のような形式になっている．これを取り出す．
+    char *req_line = headers[0];
+    char *req[] = { NULL, NULL, NULL }; // method, path, versionの3つの要素を入れる配列
+    // strtok()で空白で分割する
+    for (int i = 0; i < 3; i++) {
+        char *word = strtok(req_line, " "); // " " で区切られた最初のトークンを返す
+        req_line = NULL; // strtok()の2回目以降の呼び出しでは第1引数をNULLにする約束
+        req[i] = word;
+        if (word == NULL) {
+            break;
+        }
+    }
+    // 念のため，3つめの要素があるかを確認
+    if (req[2] == NULL) {
+        printf("wrong format: %s\n", headers[0]);
+        goto bailout;
+    }
+    const char *method = req[0];
+    const char *path = req[1];
+    const char *http_version = req[2];
+    printf("method=%s, path=%s, http_version=%s\n", method, path, http_version);
+    // 要求を処理
+    if (strcmp(method, "GET") == 0) {
+        handle_get(fp, path);
+    } else {
+        // GET要求以外の場合，クライアントに 501 Not Implemented エラーを返す
+        printf("unsupported method: %s\n", method);
+        fprintf(fp, "HTTP/1.0 501 Not Implemented\r\n");
+    }
+    bailout:
+    fclose(fp); // fcloseは内部でcloseを呼ぶので，クライアントとのコネクションが切断される
+    for (int i = 0; i < header_index; i++) {
+        free(headers[i]); // strdup()でmallocした領域を開放
+    }
+}
+
+/*
+ * GET要求を処理する
+ */
+void handle_get(FILE *fp, const char *path)
+{
+    if (strcmp(path, "/") == 0) {    // http://localhost:8000/ へのアクセスの場合
+        // C言語では連続した文字列は自動的に連結される
+        fprintf(fp,
+                "HTTP/1.0 200 OK\r\n"         // ステータス行
+                "Content-Type: text/html\r\n" // 本体がHTMLであることを伝える
+                "\r\n"                        // ヘッダの終了を表す空行
+                "<!DOCTYPE html>\r\n"         // 以下はHTML (HTML5)
+                "<html>\r\n"
+                "<head><title>Sample</title></head>\r\n"
+                "<body>This server is implemented with C!</body>\r\n"
+                "</html>\r\n"
+        );
+    } else {    // 他のパス (http://localhost:8000/abc.html) などへのアクセスの場合，404エラー
+        fprintf(fp,
+                "HTTP/1.0 404 Not Found\r\n"  // 404はNot Foundを表す
+                "Content-Type: text/html\r\n"
+                "\r\n"
+                "<!DOCTYPE html>\r\n"
+                "<html>\r\n"
+                "<head><title>404 Not Found</title></head>\r\n"
+                "<body>%s is not found</body>\r\n"
+                "</html>\r\n",
+                path
+        );
+    }
+    fflush(fp); // 溜まっているバッファをフラッシュ(送信)
 }

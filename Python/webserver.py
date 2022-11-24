@@ -10,71 +10,8 @@
 #
 
 import socket
-
-
-# GET要求を処理する
-def handle_get(client_sock, path):
-    if path == "/":
-        client_sock.send("""\
-HTTP/1.0 200 OK\r
-Content-Type: text/html\r
-\r
-<!DOCTYPE html>
-<html>
-<head><title>Sample</title></head>
-<body>This server is implemented with Python!</body>
-</html>
-""".encode())
-        # encode()で文字列からUTF-8のバイト列にエンコードする(ここではASCIIと同じ)
-    else:
-        client_sock.send(f"""\
-HTTP/1.0 404 Not Found\r
-Content-Type: text/html\r
-\r
-<!DOCTYPE html>
-<html>
-<head><title>404 Not Found</title></head>
-<body>{path} is not found</body>
-</html>
-""".encode())
-
-
-# クライアントとHTTP/1.0で通信する
-def handle_client_socket(client_sock):
-    buf = ""    # HTTPヘッダを覚えておく文字列
-    while True:
-        # ソケットから最大1024バイト読み，bytesオブジェクトで返す
-        chunk = client_sock.recv(1024)
-        if chunk == b"":
-            # closed!
-            print("connection closed!")
-            return
-        # asciiに変換し，bufに追加する
-        try:
-            data = chunk.decode("ascii")
-            buf += data
-            print("Received: " + data)
-        except UnicodeDecodeError:
-            print("non-ascii char")
-            return
-
-        i = buf.find("\r\n\r\n")          # 空行を探す
-        if i >= 0:
-            head = buf[0: i]              # 先頭から空行までを取り出す
-            headers = head.split("\r\n")  # 行単位に分割する
-            req = headers[0].split(" ")   # 先頭行を " " で分割する
-            if len(req) != 3:
-                print("wrong format")
-                return
-            method, path, http_version = req  # 配列を分割代入
-            print(f"method={method}, path={path}, http_version={http_version}")
-            if method == "GET":
-                handle_get(client_sock, path)
-            else:
-                print(f"unsupported method {method}")
-                client_sock.send("HTTP/1.0 501 Not Implemented\r\n".encode())
-            break
-
+import threading
+import typing
 
 def main():
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -85,9 +22,71 @@ def main():
 
     while True:
         client_sock, address = server_sock.accept()
-        with client_sock:
-            print(f"Connection from {address} has been established!")
-            handle_client_socket(client_sock)
+        print(f"Connection from {address} has been established!")
+        threading.Thread(target=handle_client, args=[client_sock]).start()
+        # handle_client(client_sock)
 
+def handle_client(client_sock: socket.socket):
+    """ クライアントとHTTP/1.0で通信する """
+    # makefile()によってネットワーク通信をファイルのように扱える
+    with client_sock, client_sock.makefile(mode="rw") as f:
+        headers: list[str] = []                    # HTTPヘッダを覚えておくリスト
+        # HTTPヘッダを読むための繰り返し
+        while True:
+            line = f.readline()         # 1行読む
+            if line == "":              # コネクションが切断された場合
+                print("connection closed")
+                return
+            line = line.rstrip()       # 改行文字を削除
+            print("Received: " + line)
+            headers.append(line)
+            if line == "":             # 空行判定
+                break
 
-main()
+        if len(headers) == 0:
+            print("no header!")
+            return
+
+        req = headers[0].split(" ")   # 先頭行を " " で分割する
+        if len(req) != 3:
+            print(f"wrong format: {req}")
+            return
+
+        method, path, http_version = req  # 先頭行の要素
+        print(f"method={method}, path={path}, http_version={http_version}")
+        if method == "GET":
+            handle_get(f, path)
+        else:
+            print(f"unsupported method {method}")
+            f.write("HTTP/1.0 501 Not Implemented\r\n")
+
+def handle_get(f: typing.TextIO, path: str):
+    """ GET要求を処理する """
+    if path == "/":
+        s = """\
+HTTP/1.0 200 OK
+Content-Type: text/html
+
+<!DOCTYPE html>
+<html>
+<head><title>Sample</title></head>
+<body>This server is implemented with Python!</body>
+</html>
+"""
+    else:
+        s = f"""\
+HTTP/1.0 404 Not Found
+Content-Type: text/html
+
+<!DOCTYPE html>
+<html>
+<head><title>404 Not Found</title></head>
+<body>{path} is not found</body>
+</html>
+"""
+    # 改行を LF (\n) から CR+LF (\r\n) に置き換える
+    s = s.replace("\n", "\r\n")
+    f.write(s)
+
+if __name__ == "__main__":
+    main()
