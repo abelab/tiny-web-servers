@@ -70,7 +70,7 @@ Content-Type: text/html
 <!DOCTYPE html>
 <html>
 <head><title>Sample</title></head>
-<body>This server is implemented with Python!</body>
+<body>This server is implemented in Python!</body>
 </html>
 """
     else:

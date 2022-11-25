@@ -74,7 +74,7 @@ Content-Type: text/html
 <!DOCTYPE html>
 <html>
   <head><title>Sample</title></head>
-  <body>This server is implemented with Ruby!</body>
+  <body>This server is implemented in Ruby!</body>
 </html>
 EOS
   else

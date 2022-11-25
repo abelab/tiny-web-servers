@@ -82,7 +82,7 @@ Content-Type: text/html
 <!DOCTYPE html>
 <html>
 <head><title>Sample</title></head>
-<body>This server is implemented with Go!</body>
+<body>This server is implemented in Go!</body>
 </html>`
 	} else {
 		s = fmt.Sprintf(`HTTP/1.0 404 Not Found

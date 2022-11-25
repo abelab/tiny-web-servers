@@ -179,7 +179,7 @@ void handle_get(FILE *fp, const char *path)
                 "<!DOCTYPE html>\r\n"         // 以下はHTML (HTML5)
                 "<html>\r\n"
                 "<head><title>Sample</title></head>\r\n"
-                "<body>This server is implemented with C!</body>\r\n"
+                "<body>This server is implemented in C!</body>\r\n"
                 "</html>\r\n"
         );
     } else {    // 他のパス (http://localhost:8000/abc.html) などへのアクセスの場合，404エラー

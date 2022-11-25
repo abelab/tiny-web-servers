@@ -87,7 +87,7 @@ public class WebServer {
                     "<!DOCTYPE html>",
                     "<html>",
                     "<head><title>Sample</title></head>",
-                    "<body>This server is implemented with Java!</body>",
+                    "<body>This server is implemented in Java!</body>",
                     "</html>",
                     ""));
         } else {
