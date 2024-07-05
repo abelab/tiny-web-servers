@@ -11,9 +11,11 @@
 
 require "socket"
 
+SERVER_PORT = 8888
+
 def main()
-  puts("open http://localhost:8000/ with your browser!")
-  server = TCPServer.new('0.0.0.0', 8000) # サーバソケットの生成
+  server = TCPServer.new('0.0.0.0', SERVER_PORT) # サーバソケットの生成
+  puts("open http://localhost:#{SERVER_PORT}/ with your browser!")
   loop do
     client_socket = server.accept         # コネクション確立を待つ
     # コネクションが確立したら，新しいスレッドを開始する
@@ -43,8 +45,8 @@ def handle_client(sock)
   end
 
   if headers.length == 0
-		puts("no header!")
-		return
+    puts("no header!")
+    return
   end
   req = headers[0].split(" ")  # 先頭行を " " で分割する
   if req.length != 3
@@ -84,7 +86,7 @@ Content-Type: text/html
 
 <!DOCTYPE html>
 <html>
-  <head><title>404 Not Found</title></head> 
+  <head><title>404 Not Found</title></head>
   <body>#{path} is not found</body>
 </html>
 EOS

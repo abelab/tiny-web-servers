@@ -7,9 +7,10 @@ defmodule WebServer do
   Author: Kota Abe
   """
   def main(_args \\ []) do
-    {:ok, socket} = :gen_tcp.listen(8000,
+    server_port = 8888
+    {:ok, socket} = :gen_tcp.listen(server_port,
       [:binary, packet: :line, active: false, reuseaddr: true])
-    IO.puts("open http://localhost:8000/ with your browser!")
+    IO.puts("open http://localhost:#{server_port}/ with your browser!")
     loop_acceptor(socket)
   end
 

@@ -11,6 +11,8 @@
 // このプログラムでは低レベルの処理を見せるために"net"モジュールを使っている
 const net = require("net");
 
+const SERVER_PORT = 8888;
+
 function main() {
     const server = net.createServer(); // サーバの作成
     // JavaScriptでは基本的にイベントベースで処理を記述する
@@ -21,8 +23,8 @@ function main() {
     server.on("connection", conn => {
         handleClient(conn);
     });
-    server.listen(8000); // コネクションの待ち受けを開始する
-    console.log("open http://localhost:8000/ with your browser!");
+    server.listen(SERVER_PORT); // コネクションの待ち受けを開始する
+    console.log(`open http://localhost:${SERVER_PORT}/ with your browser!`);
     // ここでmain関数は終わるが，裏でコネクションの確立を待っている
 }
 

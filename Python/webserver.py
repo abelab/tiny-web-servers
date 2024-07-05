@@ -11,14 +11,16 @@
 
 import socket
 import threading
-import typing
+import io
+
+SERVER_PORT=8888
 
 def main():
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_sock.bind(('', 8000))
+    server_sock.bind(('', SERVER_PORT))
     server_sock.listen(5)
-    print("open http://localhost:8000/ with your browser!")
+    print(f"open http://localhost:{SERVER_PORT}/ with your browser!")
 
     while True:
         client_sock, address = server_sock.accept()
@@ -60,7 +62,7 @@ def handle_client(client_sock: socket.socket):
             print(f"unsupported method {method}")
             f.write("HTTP/1.0 501 Not Implemented\r\n")
 
-def handle_get(f: typing.TextIO, path: str):
+def handle_get(f: io.TextIOWrapper, path: str):
     """ GET要求を処理する """
     if path == "/":
         s = """\

@@ -14,13 +14,15 @@ import (
 	"strings"
 )
 
+const SERVER_PORT = 8888
+
 func main() {
-	// 8000番ポートで listen する
-	listener, err := net.Listen("tcp", ":8000")
+	// SERVER_PORTでlistenする
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", SERVER_PORT))
 	if err != nil {
 		panic("ListenTCP failed")
 	}
-	fmt.Println("open http://localhost:8000/ with your browser!")
+	fmt.Printf("open http://localhost:%d/ with your browser!\n", SERVER_PORT)
 
 	// クライアントからのコネクションを待ち受けるループ
 	for {

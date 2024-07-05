@@ -10,10 +10,11 @@ using System.Net;
 
 class WebServer
 {
+    const int SERVER_PORT = 8888;
     static void Main(string[] args)
     {
-        // 8000番ポートで listen する
-        var ep = new IPEndPoint(IPAddress.Any, 8000);
+        // SERVER_PORTで listen する
+        var ep = new IPEndPoint(IPAddress.Any, SERVER_PORT);
         var listener = new TcpListener(ep);
         try
         {
@@ -24,7 +25,7 @@ class WebServer
             Console.WriteLine($"TcpListener.Start() failed: {e.ErrorCode}");
             return;
         }
-        Console.WriteLine("open http://localhost:8000/ with your browser!");
+        Console.WriteLine($"open http://localhost:{SERVER_PORT}/ with your browser!");
 
         // クライアントからのコネクションを待ち受けるループ
         while (true)

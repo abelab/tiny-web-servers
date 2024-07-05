@@ -3,11 +3,9 @@
  * Author: Kota Abe
  */
 
-// Linux (CentOS7) とMacOS (10.14.6) で動作を確認済
-// C99規格で書いているので，コンパイルには "cc -std=c99 webserver.c" とする
+// Linux (Ubuntu22) とMacOS (10.14.6) で動作を確認済
 
-#define _BSD_SOURCE // Linux requires for strdup()
-#define _POSIX_C_SOURCE 200112L // for fdopen()
+#define _DEFAULT_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +17,8 @@
 // プロトタイプ宣言
 void handle_get(FILE *fp, const char *path);
 void handle_client(int client_fd, struct sockaddr_in *client_addr);
+
+#define SERVER_PORT 8888
 
 int main(int argc, char **argv)
 {
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
     server_addr.sin_family = AF_INET; // IPv4アドレス
     // サーバ側のIPアドレスはANY(指定しない)．htonlは4バイトをネットワークバイトオーダに変換
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    server_addr.sin_port = htons(8000); // サーバ側のポート番号の指定．htonsは2バイトをネットワークバイトオーダに変換
+    server_addr.sin_port = htons(SERVER_PORT); // サーバ側のポート番号の指定．htonsは2バイトをネットワークバイトオーダに変換
     if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
         perror("bind");
         exit(1);
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    printf("open http://localhost:8000/ with your browser!\n");
+    printf("open http://localhost:%d/ with your browser!\n", SERVER_PORT);
 
     // クライアントからのコネクションを処理するためのループ
     while (1) {
@@ -170,7 +170,7 @@ void handle_client(int client_fd, struct sockaddr_in *client_addr)
  */
 void handle_get(FILE *fp, const char *path)
 {
-    if (strcmp(path, "/") == 0) {    // http://localhost:8000/ へのアクセスの場合
+    if (strcmp(path, "/") == 0) {    // http://localhost:8888/ へのアクセスの場合
         // C言語では連続した文字列は自動的に連結される
         fprintf(fp,
                 "HTTP/1.0 200 OK\r\n"         // ステータス行
@@ -182,7 +182,7 @@ void handle_get(FILE *fp, const char *path)
                 "<body>This server is implemented in C!</body>\r\n"
                 "</html>\r\n"
         );
-    } else {    // 他のパス (http://localhost:8000/abc.html) などへのアクセスの場合，404エラー
+    } else {    // 他のパス (http://localhost:8888/abc.html) などへのアクセスの場合，404エラー
         fprintf(fp,
                 "HTTP/1.0 404 Not Found\r\n"  // 404はNot Foundを表す
                 "Content-Type: text/html\r\n"

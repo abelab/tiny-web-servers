@@ -2,7 +2,7 @@
  * A simple Web server implementation in Java
  * Author: Kota Abe
  */
-package ocu;
+package webserver;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -12,11 +12,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WebServer {
+    static int SERVER_PORT = 8888;
     public WebServer() {
         // サーバソケットを作るには，ServerSocketのインスタンスを生成する
         // このtryはtry-with-resource文 (スコープを抜けると自動的にserver.close()が呼ばれる)
         try (ServerSocket server = new ServerSocket()) {
-            server.bind(new InetSocketAddress(8000));    // ポート番号の指定
+            server.bind(new InetSocketAddress(SERVER_PORT));    // ポート番号の指定
             while (true) {
                 // コネクション確立を待ってブロックする．確立するとSocketインスタンスを返す
                 try (Socket socket = server.accept()) {
@@ -107,7 +108,7 @@ public class WebServer {
     }
 
     public static void main(String[] args) {
-        System.out.println("open http://localhost:8000/ with your browser!");
+        System.out.printf("open http://localhost:%d/ with your browser!\n", SERVER_PORT);
         new WebServer();
     }
 }
